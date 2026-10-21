@@ -1,20 +1,21 @@
 
 package repository;
-import security.PasswordUtil;
-import java.util.Arrays;
+
 import database.DBConnection;
 import model.User;
 import model.Student;
 import model.Admin;
-
+import security.PasswordUtil;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Arrays;
 
 public class UserRepository {
- // Finding user using their username
+
+    // Find a user using their username.
     public User findByUsername(String username) {
 
         String sql = """
@@ -33,27 +34,29 @@ public class UserRepository {
             try (ResultSet result = statement.executeQuery()) {
 
                 if (result.next()) {
+
                     String role = result.getString("role");
-                    if("STUDENT".equals(role)){
-                    return new Student(
-                            result.getInt("user_id"),
-                            result.getString("username"),
-                            result.getString("password_hash"),
-                            result.getString("first_name"),
-                            result.getString("last_name")
-                    );
-                }
-            
-                else if("ADMIN".equals(role)){
-                    return new Admin(
-                            result.getInt("user_id"),
-                            result.getString("username"),
-                            result.getString("password_hash"),
-                            result.getString("first_name"),
-                            result.getString("last_name")
+
+                    if ("STUDENT".equals(role)) {
+                        return new Student(
+                                result.getInt("user_id"),
+                                result.getString("username"),
+                                result.getString("password_hash"),
+                                result.getString("first_name"),
+                                result.getString("last_name")
                         );
+
+                    } else if ("ADMIN".equals(role)) {
+                        return new Admin(
+                                result.getInt("user_id"),
+                                result.getString("username"),
+                                result.getString("password_hash"),
+                                result.getString("first_name"),
+                                result.getString("last_name")
+                        );
+                    }
                 }
-         }              
+            }
 
         } catch (SQLException e) {
             throw new RuntimeException(
@@ -62,83 +65,84 @@ public class UserRepository {
 
         return null;
     }
-    
-public void createStudent(
-        String username,
-        char[] password,
-        String firstName,
-        String lastName) {
 
-    String sql = """
-            INSERT INTO users
-                (username, password_hash, first_name,
-                 last_name, role)
-            VALUES (?, ?, ?, ?, 'STUDENT')
-            """;
+    // Create a new student account.
+    public void createStudent(
+            String username,
+            char[] password,
+            String firstName,
+            String lastName) {
 
-    try {
-        if (username == null || username.isBlank()
-                || password == null || password.length == 0
-                || firstName == null || firstName.isBlank()
-                || lastName == null || lastName.isBlank()) {
+        String sql = """
+                INSERT INTO users
+                    (username, password_hash, first_name,
+                     last_name, role)
+                VALUES (?, ?, ?, ?, 'STUDENT')
+                """;
 
-            throw new IllegalArgumentException(
-                    "All fields are required.");
-        }
+        try {
+            if (username == null || username.isBlank()
+                    || password == null || password.length == 0
+                    || firstName == null || firstName.isBlank()
+                    || lastName == null || lastName.isBlank()) {
 
-        String passwordHash = PasswordUtil.hashPassword(password);
+                throw new IllegalArgumentException(
+                        "All fields are required.");
+            }
 
-        try (Connection connection = DBConnection.getConnection();
-             PreparedStatement statement =
-                     connection.prepareStatement(sql)) {
+            String passwordHash =
+                    PasswordUtil.hashPassword(password);
 
-            statement.setString(1, username.trim());
-            statement.setString(2, passwordHash);
-            statement.setString(3, firstName.trim());
-            statement.setString(4, lastName.trim());
+            try (Connection connection = DBConnection.getConnection();
+                 PreparedStatement statement =
+                         connection.prepareStatement(sql)) {
 
-            statement.executeUpdate();
-        }
+                statement.setString(1, username.trim());
+                statement.setString(2, passwordHash);
+                statement.setString(3, firstName.trim());
+                statement.setString(4, lastName.trim());
 
-    } catch (SQLException e) {
-        throw new RuntimeException(
-                "Could not create student account. "
-                + "The username may already exist.", e);
+                statement.executeUpdate();
+            }
 
-    } finally {
-        if (password != null) {
-            Arrays.fill(password, '\0');
-        }
-    }
-}
+        } catch (SQLException e) {
+            throw new RuntimeException(
+                    "Could not create student account. "
+                            + "The username may already exist.", e);
 
-public User authenticate(String username, char[] password) {
-
-    try {
-        if (username == null || username.isBlank()
-                || password == null || password.length == 0) {
-            return null;
-        }
-
-        User user = findByUsername(username.trim());
-
-        if (user == null) {
-            return null;
-        }
-
-        boolean valid = PasswordUtil.verifyPassword(
-                password,
-                user.getPasswordHash()
-        );
-
-        return valid ? user : null;
-
-    } finally {
-        if (password != null) {
-            Arrays.fill(password, '\0');
+        } finally {
+            if (password != null) {
+                Arrays.fill(password, '\0');
+            }
         }
     }
-}
 
+    // Authenticate a user using their username and password.
+    public User authenticate(String username, char[] password) {
 
+        try {
+            if (username == null || username.isBlank()
+                    || password == null || password.length == 0) {
+                return null;
+            }
+
+            User user = findByUsername(username.trim());
+
+            if (user == null) {
+                return null;
+            }
+
+            boolean valid = PasswordUtil.verifyPassword(
+                    password,
+                    user.getPasswordHash()
+            );
+
+            return valid ? user : null;
+
+        } finally {
+            if (password != null) {
+                Arrays.fill(password, '\0');
+            }
+        }
+    }
 }
