@@ -4,6 +4,8 @@ import security.PasswordUtil;
 import java.util.Arrays;
 import database.DBConnection;
 import model.User;
+import model.Student;
+import model.Admin;
 
 
 import java.sql.Connection;
@@ -12,7 +14,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 public class UserRepository {
-
+ // Finding user using their username
     public User findByUsername(String username) {
 
         String sql = """
@@ -31,16 +33,27 @@ public class UserRepository {
             try (ResultSet result = statement.executeQuery()) {
 
                 if (result.next()) {
-                    return new User(
+                    String role = result.getString("role");
+                    if("STUDENT".equals(role)){
+                    return new Student(
                             result.getInt("user_id"),
                             result.getString("username"),
                             result.getString("password_hash"),
                             result.getString("first_name"),
-                            result.getString("last_name"),
-                            result.getString("role")
+                            result.getString("last_name")
                     );
                 }
-            }
+            
+                else if("ADMIN".equals(role)){
+                    return new Admin(
+                            result.getInt("user_id"),
+                            result.getString("username"),
+                            result.getString("password_hash"),
+                            result.getString("first_name"),
+                            result.getString("last_name")
+                        );
+                }
+         }              
 
         } catch (SQLException e) {
             throw new RuntimeException(
