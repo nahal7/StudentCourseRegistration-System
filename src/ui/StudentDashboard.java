@@ -67,7 +67,7 @@ public class StudentDashboard extends JFrame {
         showPage(AVAILABLE_PAGE);
     }
 
-    // Creates the same columns for both tables.
+    // Course ID remains in the model but is hidden from students.
     private DefaultTableModel createTableModel() {
 
         return new DefaultTableModel(
@@ -159,6 +159,7 @@ public class StudentDashboard extends JFrame {
                 BorderFactory.createEmptyBorder(15, 15, 15, 15));
 
         configureTable(availableTable);
+        hideIdColumn(availableTable);
 
         JButton registerButton =
                 new JButton("Register for Selected Course");
@@ -184,6 +185,7 @@ public class StudentDashboard extends JFrame {
                 BorderFactory.createEmptyBorder(15, 15, 15, 15));
 
         configureTable(registeredTable);
+        hideIdColumn(registeredTable);
 
         JButton cancelButton =
                 new JButton("Cancel Selected Registration");
@@ -247,6 +249,7 @@ public class StudentDashboard extends JFrame {
                 e -> cancelRegistration());
     }
 
+    // Configure table selection and sorting.
     private void configureTable(JTable table) {
 
         table.setSelectionMode(
@@ -256,7 +259,15 @@ public class StudentDashboard extends JFrame {
         table.setFillsViewportHeight(true);
     }
 
-    // Switches between the two pages.
+    // Hide only the displayed ID column.
+    // The ID remains in the underlying table model.
+    private void hideIdColumn(JTable table) {
+
+        table.removeColumn(
+                table.getColumnModel().getColumn(0));
+    }
+
+    // Switch between the two pages.
     private void showPage(String page) {
 
         cardLayout.show(contentPanel, page);
@@ -268,14 +279,14 @@ public class StudentDashboard extends JFrame {
         }
     }
 
-    // Refreshes both tables.
+    // Refresh both tables.
     private void refreshData() {
 
         loadAvailableCourses();
         loadRegisteredCourses();
     }
 
-    // Loads courses that are marked available.
+    // Load courses that are marked available.
     private void loadAvailableCourses() {
 
         try {
@@ -305,7 +316,7 @@ public class StudentDashboard extends JFrame {
         }
     }
 
-    // Loads courses registered by the current student.
+    // Load courses registered by the current student.
     private void loadRegisteredCourses() {
 
         try {
@@ -336,7 +347,7 @@ public class StudentDashboard extends JFrame {
         }
     }
 
-    // Gets the selected course from either table.
+    // Get the selected course, including its hidden ID.
     private Course getSelectedCourse(
             JTable table, DefaultTableModel model) {
 
@@ -346,7 +357,7 @@ public class StudentDashboard extends JFrame {
             return null;
         }
 
-        // Account for table sorting.
+        // Convert the visible sorted row to the model row.
         int modelRow =
                 table.convertRowIndexToModel(selectedRow);
 
@@ -368,7 +379,6 @@ public class StudentDashboard extends JFrame {
         int enrolled =
                 (int) model.getValueAt(modelRow, 5);
 
-        // The student table does not display availability.
         return new Course(
                 courseId,
                 code,
@@ -379,7 +389,7 @@ public class StudentDashboard extends JFrame {
                 enrolled);
     }
 
-    // Registers the student for the selected course.
+    // Register the student for the selected course.
     private void registerForCourse() {
 
         Course selectedCourse =
@@ -408,15 +418,16 @@ public class StudentDashboard extends JFrame {
         } catch (RuntimeException e) {
             JOptionPane.showMessageDialog(
                     this,
-                    "Registration failed. You may already be "
-                            + "registered or the course may no "
-                            + "longer be available.",
+                    "Registration failed. The course may be full, "
+                            + "unavailable, or you may already be "
+                            + "registered.\n"
+                            + e.getMessage(),
                     "Registration Error",
                     JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    // Cancels the selected registration.
+    // Cancel the selected registration.
     private void cancelRegistration() {
 
         Course selectedCourse =
